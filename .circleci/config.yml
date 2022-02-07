@@ -43,10 +43,10 @@ workflows:
       - dockerbuild:
           filters:
             branches:
-              only: master
+              only: main
       - deployecs:
           requires:
             - dockerbuild
           filters:
             branches:
-              only: master
+              only: main
