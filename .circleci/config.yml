@@ -13,7 +13,7 @@ jobs:
           command: |
             sha=$CIRCLE_SHA1
             docker build -t $AWS_ACCOUNT_ID.dkr.ecr.$REGION.amazonaws.com/dockrepo:$sha .
-            docker run -it $AWS_ACCOUNT_ID.dkr.ecr.$REGION.amazonaws.com/dockrepo:$sha CI=true npm run test
+            docker run -e CI=true -it $AWS_ACCOUNT_ID.dkr.ecr.$REGION.amazonaws.com/dockrepo:$sha npm run test
             docker push $AWS_ACCOUNT_ID.dkr.ecr.$REGION.amazonaws.com/dockrepo:$sha
   deployecs:
     machine:
