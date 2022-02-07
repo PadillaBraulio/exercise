@@ -2,23 +2,16 @@ version: 2
 jobs:
   dockerbuild:
     machine: 
-      image: ubuntu-1604:202007-01
+      image: ubuntu-2004:202008-01
     steps:
       - checkout
       - run:
           name: install aws
           command: |
-            sudo add-apt-repository ppa:deadsnakes/ppa
-            sudo apt-get update -y
-            sudo apt-get install python3.6 -y
-            sudo apt-get install python3-setuptools -y
-            sudo  easy_install3 pip
-            curl "https://s3.amazonaws.com/aws-cli/awscli-bundle.zip" -o "awscli-bundle.zip"
-            unzip awscli-bundle.zip
-            sudo ./awscli-bundle/install -i /usr/local/aws -b /usr/local/bin/aws
+            aws help
       - run:
           name: "Log in to AWS ECR"
-          command: eval $(aws ecr get-login --region $REGION --no-include-email)
+          command: aws ecr get-login-password --region us-east-1 | docker login --username AWS --password-stdin 032233938113.dkr.ecr.us-east-1.amazonaws.com
       - run:
           name: Build and push Docker image
           command: |
