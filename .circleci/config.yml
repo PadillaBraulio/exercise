@@ -1,14 +1,18 @@
 version: 2
 jobs:
   dockerbuild:
-    machine: true
+    machine: 
+      image: ubuntu-1604:202007-01
     steps:
       - checkout
       - run:
           name: install aws
           command: |
+            sudo add-apt-repository ppa:deadsnakes/ppa
             sudo apt-get update -y
             sudo apt-get install python3.6 -y
+            sudo apt-get install python3-setuptools -y
+            sudo  easy_install3 pip
             curl "https://s3.amazonaws.com/aws-cli/awscli-bundle.zip" -o "awscli-bundle.zip"
             unzip awscli-bundle.zip
             sudo ./awscli-bundle/install -i /usr/local/aws -b /usr/local/bin/aws
@@ -22,7 +26,8 @@ jobs:
             docker build -t $AWS_ACCOUNT_ID.dkr.ecr.$REGION.amazonaws.com/dockrepo:$sha .
             docker push $AWS_ACCOUNT_ID.dkr.ecr.$REGION.amazonaws.com/dockrepo:$sha
   deployecs:
-    machine: true
+    machine:
+      image: ubuntu-1604:202007-01
     steps:
       - run:
           name: install aws & ecs-deploy
