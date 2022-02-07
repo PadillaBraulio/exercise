@@ -1,26 +1,52 @@
-# Use the latest 2.1 version of CircleCI pipeline process engine.
-# See: https://circleci.com/docs/2.0/configuration-reference
-version: 2.1
-
-# Define a job to be invoked later in a workflow.
-# See: https://circleci.com/docs/2.0/configuration-reference/#jobs
+version: 2
 jobs:
-  say-hello:
-    # Specify the execution environment. You can specify an image from Dockerhub or use one of our Convenience Images from CircleCI's Developer Hub.
-    # See: https://circleci.com/docs/2.0/configuration-reference/#docker-machine-macos-windows-executor
-    docker:
-      - image: cimg/base:stable
-    # Add steps to the job
-    # See: https://circleci.com/docs/2.0/configuration-reference/#steps
+  dockerbuild:
+    machine: true
     steps:
       - checkout
       - run:
-          name: "Say hello"
-          command: "echo Hello, World!"
-
-# Invoke jobs via workflows
-# See: https://circleci.com/docs/2.0/configuration-reference/#workflows
+          name: install aws
+          command: |
+            curl "https://s3.amazonaws.com/aws-cli/awscli-bundle.zip" -o "awscli-bundle.zip"
+            unzip awscli-bundle.zip
+            sudo ./awscli-bundle/install -i /usr/local/aws -b /usr/local/bin/aws
+      - run:
+          name: "Log in to AWS ECR"
+          command: eval $(aws ecr get-login --region $REGION --no-include-email)
+      - run:
+          name: Build and push Docker image
+          command: |
+            sha=$CIRCLE_SHA1
+            docker build -t $AWS_ACCOUNT_ID.dkr.ecr.$REGION.amazonaws.com/dockrepo:$sha .
+            docker push $AWS_ACCOUNT_ID.dkr.ecr.$REGION.amazonaws.com/dockrepo:$sha
+  deployecs:
+    machine: true
+    steps:
+      - run:
+          name: install aws & ecs-deploy
+          command: |
+            curl "https://s3.amazonaws.com/aws-cli/awscli-bundle.zip" -o "awscli-bundle.zip"
+            unzip awscli-bundle.zip
+            sudo ./awscli-bundle/install -i /usr/local/aws -b /usr/local/bin/aws
+            sudo wget "https://raw.githubusercontent.com/silinternational/ecs-deploy/develop/ecs-deploy" -O /usr/local/bin/ecs-deploy
+            sudo chmod +x /usr/local/bin/ecs-deploy
+      - run:
+          name: deploying to ECS
+          command: |
+            sha=$CIRCLE_SHA1
+            echo "ecs-deploy --region $REGION --cluster $CLUSTER --service-name $SERVICE --image $AWS_ACCOUNT_ID.dkr.ecr.$REGION.amazonaws.com/dockrepo-demo:$sha --timeout 1800"
+            ecs-deploy --region $REGION --cluster $CLUSTER --service-name $SERVICE --image $AWS_ACCOUNT_ID.dkr.ecr.$REGION.amazonaws.com/dockrepo-demo:$sha --timeout 1800
 workflows:
-  say-hello-workflow:
+  version: 2
+  buil&push:
     jobs:
-      - say-hello
+      - dockerbuild:
+          filters:
+            branches:
+              only: master
+      - deployecs:
+          requires:
+            - dockerbuild
+          filters:
+            branches:
+              only: master
