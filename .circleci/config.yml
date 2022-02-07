@@ -7,8 +7,8 @@ jobs:
       - run:
           name: install aws
           command: |
-            apt-get update -y
-            apt-get install python3.6 -y
+            sudo apt-get update -y
+            sudo apt-get install python3.6 -y
             curl "https://s3.amazonaws.com/aws-cli/awscli-bundle.zip" -o "awscli-bundle.zip"
             unzip awscli-bundle.zip
             sudo ./awscli-bundle/install -i /usr/local/aws -b /usr/local/bin/aws
